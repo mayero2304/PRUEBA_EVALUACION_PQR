@@ -42,29 +42,27 @@ doc/       Analisis y diseno del MVP
 
 ## Ejecucion local
 
+### Instalacion
+
+```bash
+npm run install:all
+```
+
 ### Backend
 
 ```bash
-cd backend
-npm install
-npm run start:dev
+npm run dev:backend
 ```
 
 ### Frontend
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm run dev:frontend
 ```
 
 ### Build
 
 ```bash
-cd backend
-npm run build
-
-cd ../frontend
 npm run build
 ```
 
