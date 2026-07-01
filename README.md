@@ -42,13 +42,32 @@ doc/       Analisis y diseno del MVP
 
 ## Ejecucion local
 
-El scaffold tecnico aun no esta generado. Cuando se implemente, el objetivo es que el proyecto pueda levantarse en menos de 10 minutos con:
+### Backend
 
 ```bash
-cp .env.example .env
+cd backend
 npm install
-docker compose up -d db
 npm run start:dev
 ```
 
-Los comandos finales se actualizaran cuando existan los paquetes reales de `backend` y `frontend`.
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Build
+
+```bash
+cd backend
+npm run build
+
+cd ../frontend
+npm run build
+```
+
+## Docker
+
+Docker Compose queda como mejora bonus. Aun no se incluye `docker-compose.yml`, por lo tanto la ejecucion actual es por comandos separados de backend y frontend.
