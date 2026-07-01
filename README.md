@@ -30,11 +30,15 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 ```text
 backend/   API REST con NestJS
 frontend/  Aplicacion web con React
+doc/       Analisis y diseno del MVP
 ```
 
 ## Documentacion del proyecto
 
-- [Analisis inicial del sistema PQR](ANALISIS.md)
+- [Indice de analisis](ANALISIS.md)
+- [Historias de usuario](doc/historias-usuario.md)
+- [Modelo de datos y DER](doc/modelo-datos.md)
+- [Flujo del proceso PQR](doc/flujo-proceso.md)
 
 ## Ejecucion local
 
