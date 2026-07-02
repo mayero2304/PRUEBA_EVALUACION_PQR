@@ -31,6 +31,12 @@ GET http://localhost:3000/health
 
 ## Prisma
 
+Levantar PostgreSQL local desde la raiz del repositorio:
+
+```bash
+npm run db:up
+```
+
 Validar el schema:
 
 ```bash

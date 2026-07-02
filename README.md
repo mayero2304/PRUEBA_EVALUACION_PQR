@@ -74,7 +74,13 @@ npm run build
 
 ## Base de datos
 
-El backend usa Prisma con PostgreSQL. Antes de ejecutar migraciones, copia el archivo de ejemplo y ajusta la cadena de conexion:
+El backend usa Prisma con PostgreSQL. Para levantar la base de datos local:
+
+```bash
+npm run db:up
+```
+
+Antes de ejecutar migraciones, copia el archivo de ejemplo y ajusta la cadena de conexion si es necesario:
 
 ```bash
 cd backend
@@ -94,4 +100,12 @@ La migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte 
 
 ## Docker
 
-Docker Compose queda como mejora bonus. Aun no se incluye `docker-compose.yml`, por lo tanto la ejecucion actual es por comandos separados de backend y frontend.
+El `docker-compose.yml` incluye PostgreSQL para desarrollo local.
+
+```bash
+npm run db:up
+npm run db:logs
+npm run db:down
+```
+
+La aplicacion backend y frontend se ejecutan por comandos separados durante el desarrollo.
