@@ -54,6 +54,12 @@ npm run install:all
 npm run dev:backend
 ```
 
+Healthcheck:
+
+```text
+GET http://localhost:3000/health
+```
+
 ### Frontend
 
 ```bash
@@ -65,6 +71,26 @@ npm run dev:frontend
 ```bash
 npm run build
 ```
+
+## Base de datos
+
+El backend usa Prisma con PostgreSQL. Antes de ejecutar migraciones, copia el archivo de ejemplo y ajusta la cadena de conexion:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Comandos utiles de Prisma:
+
+```bash
+cd backend
+npx prisma validate
+npx prisma generate
+npx prisma migrate dev --name init_pqr_schema
+```
+
+La migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte a una base de datos valida.
 
 ## Docker
 
