@@ -6,3 +6,105 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum TipoPqr {
+  peticion
+  queja
+  reclamo
+}
+
+enum PrioridadPqr {
+  baja
+  media
+  alta
+  urgente
+}
+
+enum EstadoPqr {
+  recibida
+  en_gestion
+  resuelta
+  cerrada
+}
+
+enum CanalPqr {
+  web
+  email
+  presencial
+}
+
+enum RolUsuario {
+  agente
+  supervisor
+  admin
+}
+
+model Solicitante {
+  id             String   @id @default(uuid()) @db.Uuid
+  nombre         String   @db.VarChar(100)
+  apellido       String   @db.VarChar(100)
+  identificacion String   @unique(map: "uk_solicitantes_identificacion") @db.VarChar(30)
+  email          String   @db.VarChar(180)
+  telefono       String?  @db.VarChar(30)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  pqr Pqr[]
+
+  @@map("solicitantes")
+}
+
+model Usuario {
+  id           String     @id @default(uuid()) @db.Uuid
+  nombre       String     @db.VarChar(120)
+  email        String     @unique(map: "uk_usuarios_email") @db.VarChar(180)
+  rol          RolUsuario
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  seguimientos Seguimiento[]
+
+  @@map("usuarios")
+}
+
+model Pqr {
+  id            String       @id @default(uuid()) @db.Uuid
+  radicado      String       @unique(map: "uk_pqr_radicado") @db.VarChar(30)
+  tipo          TipoPqr
+  titulo        String       @db.VarChar(180)
+  descripcion   String
+  categoria     String       @db.VarChar(120)
+  prioridad     PrioridadPqr
+  estado        EstadoPqr    @default(recibida)
+  canal         CanalPqr     @default(web)
+  solicitanteId String       @map("solicitante_id") @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  solicitante  Solicitante   @relation(fields: [solicitanteId], references: [id], onDelete: Restrict)
+  seguimientos Seguimiento[]
+
+  @@index([estado], map: "idx_pqr_estado")
+  @@index([tipo], map: "idx_pqr_tipo")
+  @@index([prioridad], map: "idx_pqr_prioridad")
+  @@index([categoria], map: "idx_pqr_categoria")
+  @@index([createdAt], map: "idx_pqr_created_at")
+  @@index([estado, tipo, prioridad], map: "idx_pqr_filtros")
+  @@map("pqr")
+}
+
+model Seguimiento {
+  id            String   @id @default(uuid()) @db.Uuid
+  descripcion   String
+  tipoAccion    String   @map("tipo_accion") @db.VarChar(80)
+  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+  pqrId         String   @map("pqr_id") @db.Uuid
+  usuarioId     String?  @map("usuario_id") @db.Uuid
+
+  pqr     Pqr      @relation(fields: [pqrId], references: [id], onDelete: Restrict)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([pqrId, fechaRegistro], map: "idx_seguimientos_pqr_fecha")
+  @@map("seguimientos")
+}

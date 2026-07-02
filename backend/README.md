@@ -60,6 +60,13 @@ npx prisma migrate dev --name init_pqr_schema
 
 El comando de migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte a una base de datos valida.
 
+Cargar datos basicos:
+
+```bash
+cd backend
+npm run db:seed
+```
+
 ## Build
 
 ```bash

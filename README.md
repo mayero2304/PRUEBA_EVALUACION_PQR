@@ -94,6 +94,7 @@ cd backend
 npx prisma validate
 npx prisma generate
 npx prisma migrate dev --name init_pqr_schema
+npm run db:seed
 ```
 
 La migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte a una base de datos valida.
