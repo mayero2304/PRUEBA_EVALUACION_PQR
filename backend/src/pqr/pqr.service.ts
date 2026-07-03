@@ -1,15 +1,24 @@
 import {
   ConflictException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CanalPqr, EstadoPqr, Prisma } from '@prisma/client';
+import { CanalPqr, EstadoPqr, Prisma, PrioridadPqr } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePqrDto, CreateSolicitanteDto } from './dto/create-pqr.dto';
+import { CreateSeguimientoDto, UpdatePqrStatusDto } from './dto/manage-pqr.dto';
 import { QueryPqrDto } from './dto/query-pqr.dto';
 
 @Injectable()
 export class PqrService {
+  private readonly allowedTransitions: Record<EstadoPqr, EstadoPqr[]> = {
+    [EstadoPqr.recibida]: [EstadoPqr.en_gestion],
+    [EstadoPqr.en_gestion]: [EstadoPqr.resuelta],
+    [EstadoPqr.resuelta]: [EstadoPqr.cerrada],
+    [EstadoPqr.cerrada]: [],
+  };
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createPqrDto: CreatePqrDto) {
@@ -136,6 +145,108 @@ export class PqrService {
     return pqr;
   }
 
+  async updateStatus(id: string, updatePqrStatusDto: UpdatePqrStatusDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const currentPqr = await tx.pqr.findUnique({
+        where: {
+          id,
+        },
+        select: {
+          id: true,
+          estado: true,
+          prioridad: true,
+        },
+      });
+
+      if (!currentPqr) {
+        throw new NotFoundException('PQR no encontrada.');
+      }
+
+      this.validateStatusUpdate(
+        currentPqr.estado,
+        updatePqrStatusDto.estado,
+        currentPqr.prioridad,
+        updatePqrStatusDto.prioridad,
+      );
+
+      const updatedPqr = await tx.pqr.update({
+        where: {
+          id,
+        },
+        data: {
+          estado: updatePqrStatusDto.estado,
+          prioridad: updatePqrStatusDto.prioridad ?? undefined,
+        },
+        select: {
+          id: true,
+          radicado: true,
+          estado: true,
+          prioridad: true,
+          updatedAt: true,
+        },
+      });
+
+      await tx.seguimiento.create({
+        data: {
+          descripcion: this.buildStatusSeguimientoDescription(
+            currentPqr.estado,
+            updatePqrStatusDto.estado,
+            currentPqr.prioridad,
+            updatePqrStatusDto.prioridad,
+            updatePqrStatusDto.comentario,
+          ),
+          tipoAccion: this.resolveStatusActionType(
+            updatePqrStatusDto.prioridad,
+            currentPqr.prioridad,
+            currentPqr.estado,
+            updatePqrStatusDto.estado,
+          ),
+          pqrId: id,
+        },
+      });
+
+      return updatedPqr;
+    });
+  }
+
+  async createSeguimiento(
+    id: string,
+    createSeguimientoDto: CreateSeguimientoDto,
+  ) {
+    await this.ensurePqrExists(id);
+
+    return this.prisma.seguimiento.create({
+      data: {
+        descripcion: createSeguimientoDto.descripcion,
+        tipoAccion: createSeguimientoDto.tipoAccion ?? 'comentario',
+        pqrId: id,
+      },
+    });
+  }
+
+  async findSeguimientos(id: string) {
+    await this.ensurePqrExists(id);
+
+    return this.prisma.seguimiento.findMany({
+      where: {
+        pqrId: id,
+      },
+      orderBy: {
+        fechaRegistro: 'asc',
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rol: true,
+          },
+        },
+      },
+    });
+  }
+
   private async findOrCreateSolicitante(
     tx: Prisma.TransactionClient,
     solicitanteDto: CreateSolicitanteDto,
@@ -178,21 +289,22 @@ export class PqrService {
   ) {
     const year = new Date().getFullYear();
     const prefix = `PQR-${year}`;
-    const lastPqr = await tx.pqr.findFirst({
+    const existingRadicados = await tx.pqr.findMany({
       where: {
         radicado: {
           startsWith: prefix,
         },
-      },
-      orderBy: {
-        radicado: 'desc',
       },
       select: {
         radicado: true,
       },
     });
 
-    const lastNumber = lastPqr ? Number(lastPqr.radicado.split('-').at(-1)) : 0;
+    const lastNumber = existingRadicados.reduce((max, pqr) => {
+      const number = Number(pqr.radicado.split('-').at(-1));
+
+      return Number.isFinite(number) && number > max ? number : max;
+    }, 0);
     const nextNumber = lastNumber + attempt + 1;
 
     return `${prefix}-${nextNumber.toString().padStart(6, '0')}`;
@@ -205,6 +317,93 @@ export class PqrService {
       Array.isArray(error.meta?.target) &&
       error.meta.target.includes('radicado')
     );
+  }
+
+  private async ensurePqrExists(id: string) {
+    const pqr = await this.prisma.pqr.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!pqr) {
+      throw new NotFoundException('PQR no encontrada.');
+    }
+
+    return pqr;
+  }
+
+  private validateStatusUpdate(
+    currentStatus: EstadoPqr,
+    nextStatus: EstadoPqr,
+    currentPriority: PrioridadPqr,
+    nextPriority?: PrioridadPqr,
+  ) {
+    const hasStatusChange = currentStatus !== nextStatus;
+    const hasPriorityChange = nextPriority && nextPriority !== currentPriority;
+
+    if (!hasStatusChange && !hasPriorityChange) {
+      throw new BadRequestException(
+        'La PQR ya se encuentra en el estado y prioridad solicitados.',
+      );
+    }
+
+    if (!hasStatusChange) {
+      return;
+    }
+
+    const allowedNextStatuses = this.allowedTransitions[currentStatus];
+
+    if (!allowedNextStatuses.includes(nextStatus)) {
+      throw new BadRequestException(
+        `Transicion de estado no permitida: ${currentStatus} -> ${nextStatus}.`,
+      );
+    }
+  }
+
+  private buildStatusSeguimientoDescription(
+    currentStatus: EstadoPqr,
+    nextStatus: EstadoPqr,
+    currentPriority: PrioridadPqr,
+    nextPriority?: PrioridadPqr,
+    comment?: string,
+  ) {
+    const changes: string[] = [];
+
+    if (currentStatus !== nextStatus) {
+      changes.push(`Estado actualizado de ${currentStatus} a ${nextStatus}.`);
+    }
+
+    if (nextPriority && nextPriority !== currentPriority) {
+      changes.push(
+        `Prioridad actualizada de ${currentPriority} a ${nextPriority}.`,
+      );
+    }
+
+    if (comment) {
+      changes.push(comment);
+    }
+
+    return changes.join(' ');
+  }
+
+  private resolveStatusActionType(
+    nextPriority: PrioridadPqr | undefined,
+    currentPriority: PrioridadPqr,
+    currentStatus: EstadoPqr,
+    nextStatus: EstadoPqr,
+  ) {
+    const hasStatusChange = currentStatus !== nextStatus;
+    const hasPriorityChange = nextPriority && nextPriority !== currentPriority;
+
+    if (hasStatusChange && hasPriorityChange) {
+      return 'cambio_estado_prioridad';
+    }
+
+    return hasPriorityChange ? 'cambio_prioridad' : 'cambio_estado';
   }
 
   private buildWhere(query: QueryPqrDto): Prisma.PqrWhereInput {
