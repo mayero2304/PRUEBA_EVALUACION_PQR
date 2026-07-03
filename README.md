@@ -5,7 +5,7 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 ## Enlaces
 
 - Repositorio: <https://github.com/mayero2304/PRUEBA_EVALUACION_PQR>
-- Tablero Kanban: <https://github.com/users/mayero2304/projects/3>
+- Tablero Kanban: <https://github.com/users/mayero2304/projects/3/views/1?reload=1>
 
 ## Stack definido
 
@@ -35,10 +35,12 @@ doc/       Analisis y diseno del MVP
 
 ## Documentacion del proyecto
 
+- [Tablero Kanban](https://github.com/users/mayero2304/projects/3/views/1?reload=1)
 - [Indice de analisis](ANALISIS.md)
 - [Historias de usuario](doc/historias-usuario.md)
 - [Modelo de datos y DER](doc/modelo-datos.md)
 - [Flujo del proceso PQR](doc/flujo-proceso.md)
+- [Coleccion Postman](doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json)
 
 ## Ejecucion local
 
@@ -59,6 +61,14 @@ Healthcheck:
 ```text
 GET http://localhost:3000/health
 ```
+
+Documentacion API:
+
+```text
+http://localhost:3000/api/reference
+```
+
+Coleccion Postman: [doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json](doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json)
 
 ### Frontend
 

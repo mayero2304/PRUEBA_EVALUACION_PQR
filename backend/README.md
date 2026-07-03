@@ -29,6 +29,14 @@ El healthcheck queda disponible en:
 GET http://localhost:3000/health
 ```
 
+La documentacion interactiva de la API queda disponible en Scalar:
+
+```text
+http://localhost:3000/api/reference
+```
+
+Nest Devtools queda habilitado en desarrollo para inspeccionar modulos, providers y dependencias de la aplicacion. El servidor local usa `DEVTOOLS_PORT`, por defecto `8020`.
+
 ## Prisma
 
 Levantar PostgreSQL local desde la raiz del repositorio:
