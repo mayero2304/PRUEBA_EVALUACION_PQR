@@ -1,7 +1,12 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CanalPqr, EstadoPqr, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePqrDto, CreateSolicitanteDto } from './dto/create-pqr.dto';
+import { QueryPqrDto } from './dto/query-pqr.dto';
 
 @Injectable()
 export class PqrService {
@@ -55,6 +60,80 @@ export class PqrService {
     }
 
     throw new ConflictException('No fue posible generar un radicado unico.');
+  }
+
+  async findAll(query: QueryPqrDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+    const where = this.buildWhere(query);
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.pqr.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          radicado: true,
+          tipo: true,
+          titulo: true,
+          categoria: true,
+          prioridad: true,
+          estado: true,
+          canal: true,
+          createdAt: true,
+          updatedAt: true,
+          solicitante: {
+            select: {
+              id: true,
+              nombre: true,
+              apellido: true,
+              identificacion: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      this.prisma.pqr.count({ where }),
+    ]);
+
+    return {
+      data: items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string) {
+    const pqr = await this.findDetail({
+      id,
+    });
+
+    if (!pqr) {
+      throw new NotFoundException('PQR no encontrada.');
+    }
+
+    return pqr;
+  }
+
+  async findByRadicado(radicado: string) {
+    const pqr = await this.findDetail({
+      radicado,
+    });
+
+    if (!pqr) {
+      throw new NotFoundException('PQR no encontrada.');
+    }
+
+    return pqr;
   }
 
   private async findOrCreateSolicitante(
@@ -126,5 +205,43 @@ export class PqrService {
       Array.isArray(error.meta?.target) &&
       error.meta.target.includes('radicado')
     );
+  }
+
+  private buildWhere(query: QueryPqrDto): Prisma.PqrWhereInput {
+    return {
+      tipo: query.tipo,
+      estado: query.estado,
+      prioridad: query.prioridad,
+      categoria: query.categoria
+        ? {
+            contains: query.categoria,
+            mode: 'insensitive',
+          }
+        : undefined,
+    };
+  }
+
+  private findDetail(where: Prisma.PqrWhereUniqueInput) {
+    return this.prisma.pqr.findUnique({
+      where,
+      include: {
+        solicitante: true,
+        seguimientos: {
+          orderBy: {
+            fechaRegistro: 'asc',
+          },
+          include: {
+            usuario: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                rol: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

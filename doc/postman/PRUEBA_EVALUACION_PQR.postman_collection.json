@@ -1,0 +1,395 @@
+{
+  "info": {
+    "_postman_id": "02df05b0-ed0d-4cba-98b0-77565d7e8254",
+    "name": "PRUEBA_EVALUACION_PQR",
+    "description": "Coleccion para probar los endpoints implementados del MVP PQR.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "6863978",
+    "_collection_link": "https://go.postman.co/collection/6863978-02df05b0-ed0d-4cba-98b0-77565d7e8254?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Sistema",
+      "item": [
+        {
+          "name": "Healthcheck",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('estado ok', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('status', 'ok');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PQR",
+      "item": [
+        {
+          "name": "Crear PQR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('crea PQR', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('retorna id, radicado y estado', function () {",
+                  "  pm.expect(response).to.have.property('id');",
+                  "  pm.expect(response).to.have.property('radicado');",
+                  "  pm.expect(response).to.have.property('estado', 'recibida');",
+                  "});",
+                  "",
+                  "if (response.id) {",
+                  "  pm.collectionVariables.set('pqrId', response.id);",
+                  "}",
+                  "",
+                  "if (response.radicado) {",
+                  "  pm.collectionVariables.set('radicado', response.radicado);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solicitante\": {\n    \"nombre\": \"Laura\",\n    \"apellido\": \"Gomez\",\n    \"identificacion\": \"1000000003\",\n    \"email\": \"laura.gomez@example.com\",\n    \"telefono\": \"3003334455\"\n  },\n  \"tipo\": \"peticion\",\n  \"titulo\": \"Solicitud de informacion general\",\n  \"descripcion\": \"Solicito informacion sobre el estado de mi tramite registrado previamente.\",\n  \"categoria\": \"Atencion al usuario\",\n  \"prioridad\": \"baja\",\n  \"canal\": \"web\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar PQR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('retorna data y meta', function () {",
+                  "  pm.expect(response).to.have.property('data').that.is.an('array');",
+                  "  pm.expect(response).to.have.property('meta');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar PQR con filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('retorna listado filtrado', function () {",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr?page=1&limit=5&estado=recibida&tipo=queja",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "estado",
+                  "value": "recibida"
+                },
+                {
+                  "key": "tipo",
+                  "value": "queja"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar PQR por radicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('retorna detalle con historial', function () {",
+                  "  pm.expect(response).to.have.property('id');",
+                  "  pm.expect(response).to.have.property('radicado');",
+                  "  pm.expect(response).to.have.property('solicitante');",
+                  "  pm.expect(response).to.have.property('seguimientos').that.is.an('array');",
+                  "});",
+                  "",
+                  "if (response.id) {",
+                  "  pm.collectionVariables.set('pqrId', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr/buscar?radicado={{radicado}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "radicado",
+                  "value": "{{radicado}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar detalle por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('retorna solicitante e historial', function () {",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response).to.have.property('solicitante');",
+                  "  pm.expect(response).to.have.property('seguimientos').that.is.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr/{{pqrId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr",
+                "{{pqrId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar error por body invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"otro\",\n  \"titulo\": \"x\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar error por radicado inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('responde 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pqr/buscar?radicado=NO-EXISTE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pqr",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "radicado",
+                  "value": "NO-EXISTE"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "pqrId",
+      "value": ""
+    },
+    {
+      "key": "radicado",
+      "value": "PQR-2026-0001"
+    }
+  ]
+}
