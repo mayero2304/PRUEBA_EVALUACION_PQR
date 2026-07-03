@@ -7,10 +7,11 @@ import {
   RolUsuario,
   TipoPqr,
 } from '@prisma/client';
+import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const passwordHash = 'local-development-password-hash';
+const demoPassword = 'PqrDemo2026!';
 
 const usuarios = [
   {
@@ -226,6 +227,7 @@ type SeedUsuario = Awaited<ReturnType<typeof seedUsuarios>>;
 type SeedSolicitante = Awaited<ReturnType<typeof seedSolicitantes>>;
 
 async function seedUsuarios() {
+  const passwordHash = await hash(demoPassword, 10);
   const result = await Promise.all(
     usuarios.map((usuario) =>
       prisma.usuario.upsert({
@@ -233,6 +235,7 @@ async function seedUsuarios() {
         update: {
           nombre: usuario.nombre,
           rol: usuario.rol,
+          passwordHash,
         },
         create: {
           ...usuario,

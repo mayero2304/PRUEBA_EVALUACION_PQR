@@ -6,6 +6,7 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 
 - Repositorio: <https://github.com/mayero2304/PRUEBA_EVALUACION_PQR>
 - Tablero Kanban: <https://github.com/users/mayero2304/projects/3/views/1?reload=1>
+- Documentacion API Scalar: <http://localhost:3000/api/reference>
 
 ## Stack definido
 

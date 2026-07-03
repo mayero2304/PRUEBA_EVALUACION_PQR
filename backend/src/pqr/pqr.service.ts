@@ -145,7 +145,11 @@ export class PqrService {
     return pqr;
   }
 
-  async updateStatus(id: string, updatePqrStatusDto: UpdatePqrStatusDto) {
+  async updateStatus(
+    id: string,
+    updatePqrStatusDto: UpdatePqrStatusDto,
+    usuarioId?: string,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const currentPqr = await tx.pqr.findUnique({
         where: {
@@ -202,6 +206,7 @@ export class PqrService {
             updatePqrStatusDto.estado,
           ),
           pqrId: id,
+          usuarioId,
         },
       });
 
@@ -212,6 +217,7 @@ export class PqrService {
   async createSeguimiento(
     id: string,
     createSeguimientoDto: CreateSeguimientoDto,
+    usuarioId?: string,
   ) {
     await this.ensurePqrExists(id);
 
@@ -220,6 +226,7 @@ export class PqrService {
         descripcion: createSeguimientoDto.descripcion,
         tipoAccion: createSeguimientoDto.tipoAccion ?? 'comentario',
         pqrId: id,
+        usuarioId,
       },
     });
   }

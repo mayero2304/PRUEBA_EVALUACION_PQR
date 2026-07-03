@@ -37,6 +37,30 @@ http://localhost:3000/api/reference
 
 Nest Devtools queda habilitado en desarrollo para inspeccionar modulos, providers y dependencias de la aplicacion. El servidor local usa `DEVTOOLS_PORT`, por defecto `8020`.
 
+## Autenticacion
+
+Usuarios demo creados por el seed:
+
+```text
+admin.pqr@example.com
+agente.pqr@example.com
+supervisor.pqr@example.com
+```
+
+Contrasena demo:
+
+```text
+PqrDemo2026!
+```
+
+Login:
+
+```text
+POST http://localhost:3000/api/auth/login
+```
+
+El token JWT se entrega en cookie httpOnly `access_token`. No se usa refresh token para mantener el alcance acotado del MVP.
+
 ## Prisma
 
 Levantar PostgreSQL local desde la raiz del repositorio:

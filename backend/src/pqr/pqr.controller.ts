@@ -7,8 +7,15 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { RolUsuario } from '@prisma/client';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { AuthenticatedRequest } from '../auth/auth.types';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreatePqrDto } from './dto/create-pqr.dto';
 import { CreateSeguimientoDto, UpdatePqrStatusDto } from './dto/manage-pqr.dto';
 import { QueryPqrDto, SearchPqrDto } from './dto/query-pqr.dto';
@@ -45,24 +52,40 @@ export class PqrController {
 
   @ApiOperation({ summary: 'Cambiar estado y prioridad de una PQR' })
   @Patch(':id/estado')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.agente, RolUsuario.supervisor, RolUsuario.admin)
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePqrStatusDto: UpdatePqrStatusDto,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.pqrService.updateStatus(id, updatePqrStatusDto);
+    return this.pqrService.updateStatus(
+      id,
+      updatePqrStatusDto,
+      request.user?.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Agregar seguimiento a una PQR' })
   @Post(':id/seguimiento')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.agente, RolUsuario.supervisor, RolUsuario.admin)
   createSeguimiento(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() createSeguimientoDto: CreateSeguimientoDto,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.pqrService.createSeguimiento(id, createSeguimientoDto);
+    return this.pqrService.createSeguimiento(
+      id,
+      createSeguimientoDto,
+      request.user?.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Listar seguimientos de una PQR' })
   @Get(':id/seguimiento')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.agente, RolUsuario.supervisor, RolUsuario.admin)
   findSeguimientos(@Param('id', ParseUUIDPipe) id: string) {
     return this.pqrService.findSeguimientos(id);
   }
