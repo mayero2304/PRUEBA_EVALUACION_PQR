@@ -1,5 +1,12 @@
 import { apiClient } from '../lib/api';
-import type { PqrFilters, PqrListItem, PqrListResponse } from '../types/pqr';
+import type {
+  CreatePqrPayload,
+  CreatePqrResponse,
+  PqrDetail,
+  PqrFilters,
+  PqrListItem,
+  PqrListResponse,
+} from '../types/pqr';
 
 function buildQuery(filters: PqrFilters) {
   const params = new URLSearchParams({
@@ -46,4 +53,12 @@ export async function listPqr(filters: PqrFilters): Promise<PqrListResponse> {
   }
 
   return apiClient.get<PqrListResponse>(`/api/pqr?${buildQuery(filters)}`);
+}
+
+export function createPqr(payload: CreatePqrPayload) {
+  return apiClient.post<CreatePqrResponse>('/api/pqr', payload);
+}
+
+export function getPqrById(id: string) {
+  return apiClient.get<PqrDetail>(`/api/pqr/${id}`);
 }

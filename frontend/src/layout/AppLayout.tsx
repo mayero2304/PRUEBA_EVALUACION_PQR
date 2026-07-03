@@ -30,9 +30,9 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 
 const navItems = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
-  { to: '/pqr', label: 'Listado PQR', icon: Inbox },
-  { to: '/pqr/nueva', label: 'Nueva PQR', icon: FilePlus2 },
-  { to: '/estadisticas', label: 'Estadisticas', icon: BarChart3 },
+  { to: '/pqr', label: 'Listado PQR', icon: Inbox, end: true },
+  { to: '/pqr/nueva', label: 'Nueva PQR', icon: FilePlus2, end: true },
+  { to: '/estadisticas', label: 'Estadisticas', icon: BarChart3, end: true },
 ];
 
 export function AppLayout() {
