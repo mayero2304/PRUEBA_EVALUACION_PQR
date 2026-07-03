@@ -105,3 +105,10 @@ export type CreateSeguimientoPayload = {
   descripcion: string;
   tipoAccion?: string;
 };
+
+export type PqrStats = {
+  total: number;
+  byEstado: Record<EstadoPqr, number>;
+  byTipo: Record<TipoPqr, number>;
+  byPrioridad: Record<PrioridadPqr, number>;
+};

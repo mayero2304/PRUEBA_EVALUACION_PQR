@@ -3,10 +3,14 @@ import type {
   CreatePqrPayload,
   CreatePqrResponse,
   CreateSeguimientoPayload,
+  EstadoPqr,
   PqrDetail,
   PqrFilters,
   PqrListItem,
   PqrListResponse,
+  PqrStats,
+  PrioridadPqr,
+  TipoPqr,
   UpdatePqrStatusPayload,
   UpdatePqrStatusResponse,
 } from '../types/pqr';
@@ -72,4 +76,49 @@ export function updatePqrStatus(id: string, payload: UpdatePqrStatusPayload) {
 
 export function createSeguimiento(id: string, payload: CreateSeguimientoPayload) {
   return apiClient.post(`/api/pqr/${id}/seguimiento`, payload);
+}
+
+const emptyStats: PqrStats = {
+  total: 0,
+  byEstado: {
+    recibida: 0,
+    en_gestion: 0,
+    resuelta: 0,
+    cerrada: 0,
+  },
+  byTipo: {
+    peticion: 0,
+    queja: 0,
+    reclamo: 0,
+  },
+  byPrioridad: {
+    baja: 0,
+    media: 0,
+    alta: 0,
+    urgente: 0,
+  },
+};
+
+export async function getPqrStats(): Promise<PqrStats> {
+  const response = await apiClient.get<PqrListResponse>('/api/pqr?page=1&limit=50');
+
+  return response.data.reduce<PqrStats>(
+    (stats, item) => ({
+      total: stats.total + 1,
+      byEstado: {
+        ...stats.byEstado,
+        [item.estado]: stats.byEstado[item.estado as EstadoPqr] + 1,
+      },
+      byTipo: {
+        ...stats.byTipo,
+        [item.tipo]: stats.byTipo[item.tipo as TipoPqr] + 1,
+      },
+      byPrioridad: {
+        ...stats.byPrioridad,
+        [item.prioridad]:
+          stats.byPrioridad[item.prioridad as PrioridadPqr] + 1,
+      },
+    }),
+    structuredClone(emptyStats),
+  );
 }
