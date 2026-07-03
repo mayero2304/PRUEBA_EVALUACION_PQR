@@ -2,10 +2,13 @@ import { apiClient } from '../lib/api';
 import type {
   CreatePqrPayload,
   CreatePqrResponse,
+  CreateSeguimientoPayload,
   PqrDetail,
   PqrFilters,
   PqrListItem,
   PqrListResponse,
+  UpdatePqrStatusPayload,
+  UpdatePqrStatusResponse,
 } from '../types/pqr';
 
 function buildQuery(filters: PqrFilters) {
@@ -61,4 +64,12 @@ export function createPqr(payload: CreatePqrPayload) {
 
 export function getPqrById(id: string) {
   return apiClient.get<PqrDetail>(`/api/pqr/${id}`);
+}
+
+export function updatePqrStatus(id: string, payload: UpdatePqrStatusPayload) {
+  return apiClient.patch<UpdatePqrStatusResponse>(`/api/pqr/${id}/estado`, payload);
+}
+
+export function createSeguimiento(id: string, payload: CreateSeguimientoPayload) {
+  return apiClient.post(`/api/pqr/${id}/seguimiento`, payload);
 }

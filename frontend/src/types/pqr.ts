@@ -86,3 +86,22 @@ export type CreatePqrResponse = {
   radicado: string;
   estado: EstadoPqr;
 };
+
+export type UpdatePqrStatusPayload = {
+  estado: EstadoPqr;
+  prioridad?: PrioridadPqr;
+  comentario?: string;
+};
+
+export type UpdatePqrStatusResponse = {
+  id: string;
+  radicado: string;
+  estado: EstadoPqr;
+  prioridad: PrioridadPqr;
+  updatedAt: string;
+};
+
+export type CreateSeguimientoPayload = {
+  descripcion: string;
+  tipoAccion?: string;
+};

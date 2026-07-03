@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getPqrById } from '../services/pqrService';
-import type { PqrDetail } from '../types/pqr';
+import {
+  createSeguimiento,
+  getPqrById,
+  updatePqrStatus,
+} from '../services/pqrService';
+import type { EstadoPqr, PqrDetail, PrioridadPqr } from '../types/pqr';
 
 const estadoLabels = {
   recibida: 'Recibida',
@@ -22,6 +27,15 @@ const prioridadLabels = {
   alta: 'Alta',
   urgente: 'Urgente',
 };
+
+const estadoOptions: EstadoPqr[] = [
+  'recibida',
+  'en_gestion',
+  'resuelta',
+  'cerrada',
+];
+
+const prioridadOptions: PrioridadPqr[] = ['baja', 'media', 'alta', 'urgente'];
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('es-CO', {
@@ -44,23 +58,55 @@ export function PqrDetailPage() {
   const [pqr, setPqr] = useState<PqrDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusForm, setStatusForm] = useState({
+    estado: 'recibida' as EstadoPqr,
+    prioridad: 'media' as PrioridadPqr,
+    comentario: '',
+  });
+  const [seguimientoForm, setSeguimientoForm] = useState({
+    descripcion: '',
+    tipoAccion: 'comentario',
+  });
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isCreatingSeguimiento, setIsCreatingSeguimiento] = useState(false);
   const missingIdError = !id ? 'No se recibio el identificador de la PQR.' : null;
+
+  function applyDetail(result: PqrDetail) {
+    setPqr(result);
+    setStatusForm({
+      estado: result.estado,
+      prioridad: result.prioridad,
+      comentario: '',
+    });
+  }
+
+  const refreshDetail = useCallback(async () => {
+    if (!id) {
+      return;
+    }
+
+    const result = await getPqrById(id);
+
+    applyDetail(result);
+  }, [id]);
 
   useEffect(() => {
     if (!id) {
       return;
     }
 
-    const controller = new AbortController();
+    let isCurrent = true;
 
     getPqrById(id)
       .then((result) => {
-        if (!controller.signal.aborted) {
-          setPqr(result);
+        if (isCurrent) {
+          applyDetail(result);
         }
       })
       .catch((requestError: unknown) => {
-        if (!controller.signal.aborted) {
+        if (isCurrent) {
           setError(
             requestError instanceof Error
               ? requestError.message
@@ -69,15 +115,79 @@ export function PqrDetailPage() {
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
+        if (isCurrent) {
           setIsLoading(false);
         }
       });
 
     return () => {
-      controller.abort();
+      isCurrent = false;
     };
   }, [id]);
+
+  async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!id) {
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    setActionError(null);
+    setActionMessage(null);
+
+    try {
+      await updatePqrStatus(id, {
+        estado: statusForm.estado,
+        prioridad: statusForm.prioridad,
+        comentario: statusForm.comentario.trim() || undefined,
+      });
+      await refreshDetail();
+      setActionMessage('Estado y prioridad actualizados.');
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No fue posible actualizar la PQR.',
+      );
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }
+
+  async function handleSeguimientoSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!id || seguimientoForm.descripcion.trim().length < 5) {
+      setActionError('El seguimiento debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    setIsCreatingSeguimiento(true);
+    setActionError(null);
+    setActionMessage(null);
+
+    try {
+      await createSeguimiento(id, {
+        descripcion: seguimientoForm.descripcion.trim(),
+        tipoAccion: seguimientoForm.tipoAccion.trim() || 'comentario',
+      });
+      await refreshDetail();
+      setSeguimientoForm({
+        descripcion: '',
+        tipoAccion: 'comentario',
+      });
+      setActionMessage('Seguimiento agregado.');
+    } catch (requestError) {
+      setActionError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No fue posible agregar el seguimiento.',
+      );
+    } finally {
+      setIsCreatingSeguimiento(false);
+    }
+  }
 
   return (
     <section className="page">
@@ -192,6 +302,121 @@ export function PqrDetailPage() {
             <h3 className="panel-title">Descripcion</h3>
             <p>{pqr.descripcion}</p>
           </section>
+
+          <section className="panel action-panel">
+            <h3 className="panel-title">Cambiar estado</h3>
+            <form className="form-grid" onSubmit={handleStatusSubmit}>
+              <div className="field">
+                <label htmlFor="estado">Estado</label>
+                <select
+                  id="estado"
+                  value={statusForm.estado}
+                  onChange={(event) =>
+                    setStatusForm((current) => ({
+                      ...current,
+                      estado: event.target.value as EstadoPqr,
+                    }))
+                  }
+                >
+                  {estadoOptions.map((estado) => (
+                    <option key={estado} value={estado}>
+                      {estadoLabels[estado]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="prioridad">Prioridad</label>
+                <select
+                  id="prioridad"
+                  value={statusForm.prioridad}
+                  onChange={(event) =>
+                    setStatusForm((current) => ({
+                      ...current,
+                      prioridad: event.target.value as PrioridadPqr,
+                    }))
+                  }
+                >
+                  {prioridadOptions.map((prioridad) => (
+                    <option key={prioridad} value={prioridad}>
+                      {prioridadLabels[prioridad]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field full">
+                <label htmlFor="comentario">Comentario</label>
+                <textarea
+                  id="comentario"
+                  value={statusForm.comentario}
+                  onChange={(event) =>
+                    setStatusForm((current) => ({
+                      ...current,
+                      comentario: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isUpdatingStatus}
+              >
+                {isUpdatingStatus ? 'Actualizando...' : 'Actualizar PQR'}
+              </button>
+            </form>
+          </section>
+
+          <section className="panel action-panel">
+            <h3 className="panel-title">Agregar seguimiento</h3>
+            <form className="form-grid" onSubmit={handleSeguimientoSubmit}>
+              <div className="field">
+                <label htmlFor="tipoAccion">Tipo de accion</label>
+                <input
+                  id="tipoAccion"
+                  type="text"
+                  value={seguimientoForm.tipoAccion}
+                  onChange={(event) =>
+                    setSeguimientoForm((current) => ({
+                      ...current,
+                      tipoAccion: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="field full">
+                <label htmlFor="descripcionSeguimiento">Descripcion</label>
+                <textarea
+                  id="descripcionSeguimiento"
+                  value={seguimientoForm.descripcion}
+                  onChange={(event) =>
+                    setSeguimientoForm((current) => ({
+                      ...current,
+                      descripcion: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isCreatingSeguimiento}
+              >
+                {isCreatingSeguimiento ? 'Agregando...' : 'Agregar seguimiento'}
+              </button>
+            </form>
+          </section>
+
+          {(actionError || actionMessage) && (
+            <div
+              className={`state-box detail-feedback ${
+                actionError ? 'error-state' : 'success-state'
+              }`}
+              role={actionError ? 'alert' : 'status'}
+            >
+              {actionError ?? actionMessage}
+            </div>
+          )}
         </div>
       )}
     </section>

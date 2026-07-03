@@ -482,6 +482,15 @@
   grid-column: 1 / -1;
 }
 
+.action-panel {
+  align-self: start;
+}
+
+.detail-feedback {
+  grid-column: 1 / -1;
+  min-height: 64px;
+}
+
 .detail-description p {
   margin: 10px 0 0;
   color: var(--text);
@@ -571,6 +580,12 @@
   color: #991b1b;
   border-color: #fecaca;
   background: #fef2f2;
+}
+
+.success-state {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #f0fdfa;
 }
 
 .empty-state {
