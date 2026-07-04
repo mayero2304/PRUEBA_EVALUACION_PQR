@@ -5,12 +5,15 @@ import {
   FilePlus2,
   Home,
   Inbox,
+  LogIn,
+  LogOut,
   Search,
 } from 'lucide-react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
-  '/': {
+  '/dashboard': {
     title: 'Panel operativo',
     subtitle: 'Resumen de actividad y accesos principales del MVP PQR.',
   },
@@ -29,7 +32,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const navItems = [
-  { to: '/', label: 'Inicio', icon: Home, end: true },
+  { to: '/dashboard', label: 'Inicio', icon: Home, end: true },
   { to: '/pqr', label: 'Listado PQR', icon: Inbox, end: true },
   { to: '/pqr/nueva', label: 'Nueva PQR', icon: FilePlus2, end: true },
   { to: '/estadisticas', label: 'Estadisticas', icon: BarChart3, end: true },
@@ -37,6 +40,7 @@ const navItems = [
 
 export function AppLayout() {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const page = pageTitles[location.pathname] ?? {
     title: 'Detalle PQR',
     subtitle: 'Historial, estado y acciones de gestion de la solicitud.',
@@ -92,6 +96,21 @@ export function AppLayout() {
             <button className="icon-button" type="button" aria-label="Notificaciones">
               <Bell size={18} aria-hidden="true" />
             </button>
+            {user ? (
+              <div className="session-pill">
+                <span>
+                  {user.nombre} · {user.rol}
+                </span>
+                <button type="button" onClick={() => void logout()}>
+                  <LogOut size={16} aria-hidden="true" />
+                </button>
+              </div>
+            ) : (
+              <Link className="secondary-button" to="/login">
+                <LogIn size={16} aria-hidden="true" />
+                Login
+              </Link>
+            )}
           </div>
         </header>
 

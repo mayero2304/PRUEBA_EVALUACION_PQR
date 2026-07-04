@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import { ApiError } from '../lib/api';
 import {
   createSeguimiento,
   getPqrById,
@@ -35,6 +37,13 @@ const estadoOptions: EstadoPqr[] = [
   'cerrada',
 ];
 
+const allowedStatusTransitions: Record<EstadoPqr, EstadoPqr[]> = {
+  recibida: ['en_gestion'],
+  en_gestion: ['resuelta'],
+  resuelta: ['cerrada'],
+  cerrada: [],
+};
+
 const prioridadOptions: PrioridadPqr[] = ['baja', 'media', 'alta', 'urgente'];
 
 function formatDate(value: string) {
@@ -53,8 +62,15 @@ function getSolicitanteName(pqr: PqrDetail) {
     .join(' ');
 }
 
+function canSelectStatus(currentStatus: EstadoPqr, option: EstadoPqr) {
+  return (
+    option === currentStatus || allowedStatusTransitions[currentStatus].includes(option)
+  );
+}
+
 export function PqrDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [pqr, setPqr] = useState<PqrDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +148,11 @@ export function PqrDetailPage() {
       return;
     }
 
+    if (!user) {
+      setActionError('Debes iniciar sesion para gestionar la PQR.');
+      return;
+    }
+
     setIsUpdatingStatus(true);
     setActionError(null);
     setActionMessage(null);
@@ -145,6 +166,16 @@ export function PqrDetailPage() {
       await refreshDetail();
       setActionMessage('Estado y prioridad actualizados.');
     } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        setActionError('Sesion requerida. Inicia sesion para continuar.');
+        return;
+      }
+
+      if (requestError instanceof ApiError && requestError.status === 403) {
+        setActionError('Tu rol no tiene permiso para esta accion.');
+        return;
+      }
+
       setActionError(
         requestError instanceof Error
           ? requestError.message
@@ -160,6 +191,11 @@ export function PqrDetailPage() {
 
     if (!id || seguimientoForm.descripcion.trim().length < 5) {
       setActionError('El seguimiento debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    if (!user) {
+      setActionError('Debes iniciar sesion para agregar seguimientos.');
       return;
     }
 
@@ -179,6 +215,16 @@ export function PqrDetailPage() {
       });
       setActionMessage('Seguimiento agregado.');
     } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        setActionError('Sesion requerida. Inicia sesion para continuar.');
+        return;
+      }
+
+      if (requestError instanceof ApiError && requestError.status === 403) {
+        setActionError('Tu rol no tiene permiso para esta accion.');
+        return;
+      }
+
       setActionError(
         requestError instanceof Error
           ? requestError.message
@@ -305,6 +351,11 @@ export function PqrDetailPage() {
 
           <section className="panel action-panel">
             <h3 className="panel-title">Cambiar estado</h3>
+            {!user && (
+              <p className="auth-required">
+                Inicia sesion para habilitar acciones internas.
+              </p>
+            )}
             <form className="form-grid" onSubmit={handleStatusSubmit}>
               <div className="field">
                 <label htmlFor="estado">Estado</label>
@@ -319,7 +370,11 @@ export function PqrDetailPage() {
                   }
                 >
                   {estadoOptions.map((estado) => (
-                    <option key={estado} value={estado}>
+                    <option
+                      disabled={!canSelectStatus(pqr.estado, estado)}
+                      key={estado}
+                      value={estado}
+                    >
                       {estadoLabels[estado]}
                     </option>
                   ))}
@@ -360,7 +415,7 @@ export function PqrDetailPage() {
               <button
                 className="primary-button"
                 type="submit"
-                disabled={isUpdatingStatus}
+                disabled={isUpdatingStatus || !user}
               >
                 {isUpdatingStatus ? 'Actualizando...' : 'Actualizar PQR'}
               </button>
@@ -369,6 +424,11 @@ export function PqrDetailPage() {
 
           <section className="panel action-panel">
             <h3 className="panel-title">Agregar seguimiento</h3>
+            {!user && (
+              <p className="auth-required">
+                Inicia sesion para registrar comentarios internos.
+              </p>
+            )}
             <form className="form-grid" onSubmit={handleSeguimientoSubmit}>
               <div className="field">
                 <label htmlFor="tipoAccion">Tipo de accion</label>
@@ -400,7 +460,7 @@ export function PqrDetailPage() {
               <button
                 className="primary-button"
                 type="submit"
-                disabled={isCreatingSeguimiento}
+                disabled={isCreatingSeguimiento || !user}
               >
                 {isCreatingSeguimiento ? 'Agregando...' : 'Agregar seguimiento'}
               </button>
