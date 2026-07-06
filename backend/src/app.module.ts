@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { AuthModule } from './auth/auth.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PqrModule } from './pqr/pqr.module';
 import { AppController } from './app.controller';
@@ -17,6 +18,7 @@ import { AppService } from './app.service';
       port: Number(process.env.DEVTOOLS_PORT ?? 8020),
     }),
     AuthModule,
+    NotificacionesModule,
     PrismaModule,
     PqrModule,
   ],

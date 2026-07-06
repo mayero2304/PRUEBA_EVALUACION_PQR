@@ -167,6 +167,111 @@
   color: #0f766e;
 }
 
+.notifications {
+  position: relative;
+}
+
+.notification-button {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.notification-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: 340px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+}
+
+.notification-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notification-menu-header strong {
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.notification-menu-header span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 18px 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.notification-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  background: #ffffff;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background: #f8fafc;
+}
+
+.notification-item.unread {
+  background: #f0fdfa;
+}
+
+.notification-title {
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.notification-message {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .session-pill {
   min-height: 40px;
   display: inline-flex;
@@ -878,6 +983,17 @@
   .session-pill {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .notifications,
+  .notification-button {
+    width: 100%;
+  }
+
+  .notification-menu {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
   }
 
   .public-topbar {

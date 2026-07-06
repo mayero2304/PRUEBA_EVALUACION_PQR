@@ -2,9 +2,11 @@ import {
   ConflictException,
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CanalPqr, EstadoPqr, Prisma, PrioridadPqr } from '@prisma/client';
+import { NotificacionesService } from '../notificaciones/notificaciones.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePqrDto, CreateSolicitanteDto } from './dto/create-pqr.dto';
 import { CreateSeguimientoDto, UpdatePqrStatusDto } from './dto/manage-pqr.dto';
@@ -12,6 +14,7 @@ import { QueryPqrDto } from './dto/query-pqr.dto';
 
 @Injectable()
 export class PqrService {
+  private readonly logger = new Logger(PqrService.name);
   private readonly allowedTransitions: Record<EstadoPqr, EstadoPqr[]> = {
     [EstadoPqr.recibida]: [EstadoPqr.en_gestion],
     [EstadoPqr.en_gestion]: [EstadoPqr.resuelta],
@@ -19,12 +22,15 @@ export class PqrService {
     [EstadoPqr.cerrada]: [],
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificacionesService: NotificacionesService,
+  ) {}
 
   async create(createPqrDto: CreatePqrDto) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        return await this.prisma.$transaction(async (tx) => {
+        const created = await this.prisma.$transaction(async (tx) => {
           const solicitante = await this.findOrCreateSolicitante(
             tx,
             createPqrDto.solicitante,
@@ -54,11 +60,33 @@ export class PqrService {
           });
 
           return {
-            id: pqr.id,
-            radicado: pqr.radicado,
-            estado: pqr.estado,
+            response: {
+              id: pqr.id,
+              radicado: pqr.radicado,
+              estado: pqr.estado,
+            },
+            notification: {
+              pqrId: pqr.id,
+              radicado: pqr.radicado,
+              titulo: pqr.titulo,
+              categoria: pqr.categoria,
+              solicitanteNombre: `${solicitante.nombre} ${solicitante.apellido}`,
+              solicitanteEmail: solicitante.email,
+            },
           };
         });
+
+        void this.notificacionesService
+          .notifyPqrCreated(created.notification)
+          .catch((error: unknown) => {
+            this.logger.warn(
+              `No fue posible generar notificacion para ${created.response.radicado}: ${
+                error instanceof Error ? error.message : 'error desconocido'
+              }`,
+            );
+          });
+
+        return created.response;
       } catch (error) {
         if (this.isRadicadoUniqueError(error)) {
           continue;

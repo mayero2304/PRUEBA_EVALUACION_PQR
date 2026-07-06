@@ -39,6 +39,10 @@ enum RolUsuario {
   admin
 }
 
+enum TipoNotificacion {
+  nueva_pqr
+}
+
 model Solicitante {
   id             String   @id @default(uuid()) @db.Uuid
   nombre         String   @db.VarChar(100)
@@ -82,8 +86,9 @@ model Pqr {
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
-  solicitante  Solicitante   @relation(fields: [solicitanteId], references: [id], onDelete: Restrict)
-  seguimientos Seguimiento[]
+  solicitante    Solicitante    @relation(fields: [solicitanteId], references: [id], onDelete: Restrict)
+  seguimientos   Seguimiento[]
+  notificaciones Notificacion[]
 
   @@index([estado], map: "idx_pqr_estado")
   @@index([tipo], map: "idx_pqr_tipo")
@@ -107,4 +112,20 @@ model Seguimiento {
 
   @@index([pqrId, fechaRegistro], map: "idx_seguimientos_pqr_fecha")
   @@map("seguimientos")
+}
+
+model Notificacion {
+  id        String           @id @default(uuid()) @db.Uuid
+  titulo    String           @db.VarChar(160)
+  mensaje   String           @db.VarChar(500)
+  tipo      TipoNotificacion @default(nueva_pqr)
+  leida     Boolean          @default(false)
+  pqrId     String?          @map("pqr_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  pqr Pqr? @relation(fields: [pqrId], references: [id], onDelete: Cascade)
+
+  @@index([leida, createdAt], map: "idx_notificaciones_leida_fecha")
+  @@index([pqrId], map: "idx_notificaciones_pqr")
+  @@map("notificaciones")
 }

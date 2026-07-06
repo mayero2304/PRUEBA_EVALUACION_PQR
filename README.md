@@ -7,6 +7,7 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 - Repositorio: <https://github.com/mayero2304/PRUEBA_EVALUACION_PQR>
 - Tablero Kanban: <https://github.com/users/mayero2304/projects/3/views/1?reload=1>
 - Documentacion API Scalar: <http://localhost:3000/api/reference>
+- Servidor Corro local: <http://localhost:8025>
 
 ## Stack definido
 
@@ -25,6 +26,7 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 - Agregar entradas de seguimiento o comentarios internos.
 - Buscar una PQR por numero de radicado.
 - Frontend con listado, formulario de registro, detalle y panel de estadisticas basicas.
+- Notificaciones internas por SSE y correo local de confirmacion usando Mailpit.
 
 ## Estructura inicial
 
@@ -89,6 +91,7 @@ El backend usa Prisma con PostgreSQL. Para levantar la base de datos local:
 
 ```bash
 npm run db:up
+npm run mail:up
 ```
 
 Antes de ejecutar migraciones, copia el archivo de ejemplo y ajusta la cadena de conexion si es necesario:
@@ -112,12 +115,16 @@ La migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte 
 
 ## Docker
 
-El `docker-compose.yml` incluye PostgreSQL para desarrollo local.
+El `docker-compose.yml` incluye PostgreSQL y Mailpit para desarrollo local.
 
 ```bash
 npm run db:up
+npm run mail:up
 npm run db:logs
+npm run mail:logs
 npm run db:down
 ```
 
 La aplicacion backend y frontend se ejecutan por comandos separados durante el desarrollo.
+
+Mailpit expone SMTP local en `localhost:1025` y bandeja web en `http://localhost:8025`.

@@ -61,6 +61,30 @@ POST http://localhost:3000/api/auth/login
 
 El token JWT se entrega en cookie httpOnly `access_token`. No se usa refresh token para mantener el alcance acotado del MVP.
 
+## Notificaciones y correo local
+
+Cuando se registra una PQR publica, el backend crea una notificacion interna y envia un correo de confirmacion al solicitante.
+
+Levantar Mailpit desde la raiz del repositorio:
+
+```bash
+npm run mail:up
+```
+
+Variables de correo usadas por el backend:
+
+```text
+MAIL_HOST=localhost
+MAIL_PORT=1025
+MAIL_FROM=PQR <no-reply@pqr.local>
+```
+
+La bandeja local queda disponible en:
+
+```text
+http://localhost:8025
+```
+
 ## Prisma
 
 Levantar PostgreSQL local desde la raiz del repositorio:
