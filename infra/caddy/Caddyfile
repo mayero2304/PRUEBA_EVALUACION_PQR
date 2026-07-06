@@ -1,0 +1,15 @@
+{$APP_DOMAIN:localhost} {
+  encode zstd gzip
+
+  handle /api/* {
+    reverse_proxy backend:3000
+  }
+
+  handle /health {
+    reverse_proxy backend:3000
+  }
+
+  handle {
+    reverse_proxy frontend:80
+  }
+}

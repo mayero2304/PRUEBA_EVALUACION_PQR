@@ -128,4 +128,15 @@ npm run db:seed
 ```bash
 cd backend
 npm run build
+npm run start:prod
+```
+
+## Docker
+
+La imagen del backend se construye con `backend/Dockerfile` usando multi-stage. El target `runtime` ejecuta la API compilada y el target `migrate` ejecuta migraciones Prisma con `prisma migrate deploy`.
+
+Desde la raiz del repositorio:
+
+```bash
+npm run docker:local:up
 ```

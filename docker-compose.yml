@@ -25,5 +25,67 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  migrate:
+    build:
+      context: ./backend
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pqr_mvp?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    container_name: pqr_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DEVTOOLS_PORT: 8020
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pqr_mvp?schema=public
+      JWT_SECRET: local-docker-secret
+      JWT_EXPIRES_IN: 1d
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: "PQR <no-reply@pqr.local>"
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runtime
+      args:
+        VITE_API_URL: http://localhost:3000
+    container_name: pqr_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   pqr_postgres_data:
