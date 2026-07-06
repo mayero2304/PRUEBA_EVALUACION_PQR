@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from './auth/useAuth';
 import { AppLayout } from './layout/AppLayout';
 import { CreatePqrPage } from './pages/CreatePqrPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -9,12 +10,26 @@ import { PublicPqrPage } from './pages/PublicPqrPage';
 import { StatsPage } from './pages/StatsPage';
 import './App.css';
 
+function RequireAuth() {
+  const { isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <AppLayout />;
+}
+
 function App() {
   return (
     <Routes>
       <Route index element={<PublicPqrPage />} />
       <Route path="login" element={<LoginPage />} />
-      <Route element={<AppLayout />}>
+      <Route element={<RequireAuth />}>
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="pqr" element={<PqrListPage />} />
         <Route path="pqr/nueva" element={<CreatePqrPage />} />

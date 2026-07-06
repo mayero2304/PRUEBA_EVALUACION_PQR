@@ -10,7 +10,13 @@ import {
   Search,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { API_BASE_URL } from '../lib/api';
 import {
@@ -47,6 +53,7 @@ const navItems = [
 
 export function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -119,6 +126,11 @@ export function AppLayout() {
       );
       setUnreadCount((current) => current + 1);
     }
+  }
+
+  async function handleLogout() {
+    await logout();
+    navigate('/', { replace: true });
   }
 
   return (
@@ -247,7 +259,7 @@ export function AppLayout() {
                 <span>
                   {user.nombre} · {user.rol}
                 </span>
-                <button type="button" onClick={() => void logout()}>
+                <button type="button" onClick={() => void handleLogout()}>
                   <LogOut size={16} aria-hidden="true" />
                 </button>
               </div>
