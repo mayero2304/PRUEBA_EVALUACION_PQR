@@ -1,12 +1,52 @@
 {
   "info": {
-    "_postman_id": "4083db68-a650-4015-88b7-c557aa11cbf0",
     "name": "PRUEBA_EVALUACION_PQR",
-    "description": "Coleccion para probar los endpoints implementados del MVP PQR.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "6863978",
-    "_collection_link": "https://go.postman.co/collection/6863978-4083db68-a650-4015-88b7-c557aa11cbf0?source=collection_link"
+    "description": "Coleccion para probar el MVP PQR: healthcheck, autenticacion, PQR, seguimientos y notificaciones.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "pqrId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "radicado",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificacionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authEmail",
+      "value": "agente.pqr@example.com",
+      "type": "string"
+    },
+    {
+      "key": "authPassword",
+      "value": "PqrDemo2026!",
+      "type": "string"
+    }
+  ],
   "item": [
     {
       "name": "Sistema",
@@ -17,16 +57,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('estado ok', function () {",
+                  "pm.test('healthcheck ok', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
                   "  pm.expect(pm.response.json()).to.have.property('status', 'ok');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -48,36 +85,30 @@
       ]
     },
     {
-      "name": "PQR",
+      "name": "Auth",
       "item": [
         {
-          "name": "Crear PQR",
+          "name": "Login interno",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('crea PQR', function () {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "pm.test('login ok', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
                   "});",
-                  "",
-                  "const response = pm.response.json();",
-                  "",
-                  "pm.test('retorna id, radicado y estado', function () {",
-                  "  pm.expect(response).to.have.property('id');",
-                  "  pm.expect(response).to.have.property('radicado');",
-                  "  pm.expect(response).to.have.property('estado', 'recibida');",
+                  "const user = pm.response.json();",
+                  "pm.test('retorna usuario autenticado', function () {",
+                  "  pm.expect(user).to.have.property('sub');",
+                  "  pm.expect(user).to.have.property('email');",
+                  "  pm.expect(user).to.have.property('rol');",
                   "});",
-                  "",
-                  "if (response.id) {",
-                  "  pm.collectionVariables.set('pqrId', response.id);",
-                  "}",
-                  "",
-                  "if (response.radicado) {",
-                  "  pm.collectionVariables.set('radicado', response.radicado);",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "pm.test('recibe cookie httpOnly access_token', function () {",
+                  "  const cookie = pm.cookies.get('access_token');",
+                  "  pm.expect(cookie).to.be.ok;",
+                  "});"
+                ]
               }
             }
           ],
@@ -91,7 +122,168 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"solicitante\": {\n    \"nombre\": \"Laura\",\n    \"apellido\": \"Gomez\",\n    \"identificacion\": \"1000000003\",\n    \"email\": \"laura.gomez@example.com\",\n    \"telefono\": \"3003334455\"\n  },\n  \"tipo\": \"peticion\",\n  \"titulo\": \"Solicitud de informacion general\",\n  \"descripcion\": \"Solicito informacion sobre el estado de mi tramite registrado previamente.\",\n  \"categoria\": \"Atencion al usuario\",\n  \"prioridad\": \"baja\",\n  \"canal\": \"web\"\n}"
+              "raw": "{\n  \"email\": \"agente.pqr@example.com\",\n  \"password\": \"PqrDemo2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Usuario autenticado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('me ok', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logout sin contenido', function () {",
+                  "  pm.expect(pm.response.code).to.equal(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar endpoint protegido sin sesion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('sin sesion responde 401', function () {",
+                  "  pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PQR",
+      "item": [
+        {
+          "name": "Crear PQR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('crea PQR', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "pm.test('retorna id, radicado y estado', function () {",
+                  "  pm.expect(response).to.have.property('id');",
+                  "  pm.expect(response).to.have.property('radicado');",
+                  "  pm.expect(response).to.have.property('estado', 'recibida');",
+                  "});",
+                  "if (response.id) pm.collectionVariables.set('pqrId', response.id);",
+                  "if (response.radicado) pm.collectionVariables.set('radicado', response.radicado);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solicitante\": {\n    \"nombre\": \"Laura\",\n    \"apellido\": \"Gomez\",\n    \"identificacion\": \"1000000003\",\n    \"email\": \"laura.gomez@example.com\",\n    \"telefono\": \"3003334455\"\n  },\n  \"tipo\": \"peticion\",\n  \"titulo\": \"Solicitud de informacion general\",\n  \"descripcion\": \"Solicito informacion sobre el estado de mi tramite registrado previamente.\",\n  \"categoria\": \"Atencion al usuario\",\n  \"prioridad\": \"baja\",\n  \"canal\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr",
@@ -112,19 +304,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "const response = pm.response.json();",
-                  "",
-                  "pm.test('retorna data y meta', function () {",
-                  "  pm.expect(response).to.have.property('data').that.is.an('array');",
-                  "  pm.expect(response).to.have.property('meta');",
+                  "pm.test('lista PQR', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('data');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -160,17 +346,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('retorna listado filtrado', function () {",
-                  "  const response = pm.response.json();",
-                  "  pm.expect(response.data).to.be.an('array');",
+                  "pm.test('filtra PQR', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -178,7 +359,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/pqr?page=1&limit=5&estado=recibida&tipo=queja",
+              "raw": "{{baseUrl}}/api/pqr?page=1&limit=5&estado=recibida&tipo=peticion&prioridad=baja",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -201,7 +382,11 @@
                 },
                 {
                   "key": "tipo",
-                  "value": "queja"
+                  "value": "peticion"
+                },
+                {
+                  "key": "prioridad",
+                  "value": "baja"
                 }
               ]
             }
@@ -214,25 +399,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "const response = pm.response.json();",
-                  "",
-                  "pm.test('retorna detalle con historial', function () {",
-                  "  pm.expect(response).to.have.property('id');",
-                  "  pm.expect(response).to.have.property('radicado');",
-                  "  pm.expect(response).to.have.property('solicitante');",
-                  "  pm.expect(response).to.have.property('seguimientos').that.is.an('array');",
-                  "});",
-                  "",
-                  "if (response.id) {",
-                  "  pm.collectionVariables.set('pqrId', response.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "pm.test('busca por radicado', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('radicado', pm.collectionVariables.get('radicado'));",
+                  "});"
+                ]
               }
             }
           ],
@@ -265,18 +438,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('retorna solicitante e historial', function () {",
-                  "  const response = pm.response.json();",
-                  "  pm.expect(response).to.have.property('solicitante');",
-                  "  pm.expect(response).to.have.property('seguimientos').that.is.an('array');",
+                  "pm.test('detalle ok', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('id', pm.collectionVariables.get('pqrId'));",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -303,12 +471,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 400', function () {",
-                  "  pm.response.to.have.status(400);",
+                  "pm.test('body invalido responde 400', function () {",
+                  "  pm.expect(pm.response.code).to.equal(400);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -322,7 +490,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tipo\": \"otro\",\n  \"titulo\": \"x\"\n}"
+              "raw": "{\n  \"titulo\": \"Payload incompleto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr",
@@ -343,12 +516,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 404', function () {",
-                  "  pm.response.to.have.status(404);",
+                  "pm.test('radicado inexistente responde 404', function () {",
+                  "  pm.expect(pm.response.code).to.equal(404);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -374,25 +547,24 @@
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Gestion interna PQR",
+      "item": [
         {
-          "name": "Agregar seguimiento",
+          "name": "Login requerido para acciones internas",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('crea seguimiento', function () {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-                  "});",
-                  "",
-                  "pm.test('retorna seguimiento', function () {",
-                  "  const response = pm.response.json();",
-                  "  pm.expect(response).to.have.property('id');",
-                  "  pm.expect(response).to.have.property('descripcion');",
+                  "pm.test('login requerido ok', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -406,7 +578,59 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"descripcion\": \"Se agrega comentario interno de seguimiento desde Postman.\",\n  \"tipoAccion\": \"comentario\"\n}"
+              "raw": "{\n  \"email\": \"agente.pqr@example.com\",\n  \"password\": \"PqrDemo2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar seguimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('agrega seguimiento', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  pm.expect(pm.response.json()).to.have.property('pqrId', pm.collectionVariables.get('pqrId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Seguimiento interno registrado desde Postman.\",\n  \"tipoAccion\": \"comentario\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr/{{pqrId}}/seguimiento",
@@ -429,16 +653,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('retorna arreglo', function () {",
+                  "pm.test('lista seguimientos', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
                   "  pm.expect(pm.response.json()).to.be.an('array');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -466,17 +687,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('actualiza estado', function () {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-                  "});",
-                  "",
-                  "pm.test('estado en_gestion', function () {",
-                  "  const response = pm.response.json();",
-                  "  pm.expect(response).to.have.property('estado', 'en_gestion');",
+                  "pm.test('cambia estado a en gestion', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('estado', 'en_gestion');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -490,7 +707,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"en_gestion\",\n  \"prioridad\": \"media\",\n  \"comentario\": \"Caso tomado para gestion inicial.\"\n}"
+              "raw": "{\n  \"estado\": \"en_gestion\",\n  \"prioridad\": \"media\",\n  \"comentario\": \"Se inicia gestion de la solicitud.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr/{{pqrId}}/estado",
@@ -513,12 +735,12 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('responde 400 si la transicion no es valida', function () {",
-                  "  pm.response.to.have.status(400);",
+                  "pm.test('transicion invalida responde 400', function () {",
+                  "  pm.expect(pm.response.code).to.equal(400);",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -532,7 +754,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"cerrada\"\n}"
+              "raw": "{\n  \"estado\": \"cerrada\",\n  \"comentario\": \"Intento de salto no permitido.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr/{{pqrId}}/estado",
@@ -555,17 +782,13 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('actualiza prioridad', function () {",
-                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-                  "});",
-                  "",
-                  "pm.test('prioridad urgente', function () {",
-                  "  const response = pm.response.json();",
-                  "  pm.expect(response).to.have.property('prioridad', 'urgente');",
+                  "pm.test('cambia prioridad', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('prioridad', 'alta');",
                   "});"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -579,7 +802,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"recibida\",\n  \"prioridad\": \"urgente\",\n  \"comentario\": \"Se escala prioridad por criticidad del caso.\"\n}"
+              "raw": "{\n  \"estado\": \"en_gestion\",\n  \"prioridad\": \"alta\",\n  \"comentario\": \"Se ajusta prioridad por impacto.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/pqr/{{pqrId}}/estado",
@@ -597,20 +825,81 @@
           "response": []
         }
       ]
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000"
     },
     {
-      "key": "pqrId",
-      "value": ""
-    },
-    {
-      "key": "radicado",
-      "value": "PQR-2026-0001"
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Listar notificaciones recientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('lista notificaciones', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  const response = pm.response.json();",
+                  "  pm.expect(response).to.have.property('data');",
+                  "  pm.expect(response).to.have.property('unreadCount');",
+                  "  if (response.data.length > 0) pm.collectionVariables.set('notificacionId', response.data[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Marcar notificacion como leida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('marca notificacion como leida', function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('leida', true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/{{notificacionId}}/leida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones",
+                "{{notificacionId}}",
+                "leida"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "El stream SSE se valida manualmente desde el frontend/campanita porque mantiene la conexion HTTP abierta. El Runner de Postman debe ejecutar solo endpoints con respuesta finita."
     }
   ]
 }

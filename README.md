@@ -6,16 +6,32 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 
 - Repositorio: <https://github.com/mayero2304/PRUEBA_EVALUACION_PQR>
 - Tablero Kanban: <https://github.com/users/mayero2304/projects/3/views/1?reload=1>
-- Documentacion API Scalar: <http://localhost:3000/api/reference>
-- Servidor Corro local: <http://localhost:8025>
 
-## Stack definido
+## Documentacion del proyecto
 
-- Backend: NestJS.
-- Frontend: React.
-- Base de datos propuesta: PostgreSQL.
-- ORM propuesto: Prisma.
-- Gestion del proyecto: GitHub Projects con flujo Kanban.
+- [Historias de usuario](doc/historias-usuario.md)
+- [Decisiones tecnicas](doc/decisiones-tecnicas.md)
+- [Modelo de datos y DER](doc/modelo-datos.md)
+- [Flujo del proceso PQR](doc/flujo-proceso.md)
+- [Coleccion Postman](doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json)
+
+Para importar la coleccion en Postman, use el archivo:
+
+```text
+doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json
+```
+
+Orden recomendado en Postman:
+
+1. `Sistema -> Healthcheck`
+2. `Auth -> Login interno`
+3. `PQR -> Crear PQR`
+4. `Gestion interna PQR -> Login requerido para acciones internas`
+5. `Gestion interna PQR -> Agregar seguimiento`
+6. `Gestion interna PQR -> Listar seguimientos`
+7. `Gestion interna PQR -> Cambiar estado a en gestion`
+
+Los documentos de modelo de datos y flujo usan diagramas Mermaid. En GitHub se visualizan directamente; en VS Code se puede usar la extension [Mermaid](https://marketplace.visualstudio.com/items?itemName=MermaidChart.vscode-mermaid-chart) para previsualizarlos localmente.
 
 ## Alcance MVP
 
@@ -28,103 +44,150 @@ MVP de un sistema web para la gestion de PQR (Peticiones, Quejas y Reclamos).
 - Frontend con listado, formulario de registro, detalle y panel de estadisticas basicas.
 - Notificaciones internas por SSE y correo local de confirmacion usando Mailpit.
 
-## Estructura inicial
+## Ejecucion rapida
+
+Salvo que el bloque indique un `cd` especifico, ejecuta los comandos desde la raiz del proyecto.
+
+| Modo | Uso recomendado |
+| --- | --- |
+| [Local PC](#local-pc) | Desarrollo con Node.js, PostgreSQL y Mailpit locales por Docker. |
+| [Local Docker](#local-docker) | Levantar todo el stack con Docker Compose. |
+| [Prod Docker](#prod-docker) | Ejecutar el stack con Caddy como reverse proxy. |
+
+### Local PC
+
+Requisitos usados en esta entrega:
 
 ```text
-backend/   API REST con NestJS
-frontend/  Aplicacion web con React
-doc/       Analisis y diseno del MVP
+Node.js: 26.4.0
+npm:     11.16.0
 ```
 
-## Documentacion del proyecto
+El proyecto requiere Node.js 20 o superior.
 
-- [Tablero Kanban](https://github.com/users/mayero2304/projects/3/views/1?reload=1)
-- [Indice de analisis](ANALISIS.md)
-- [Historias de usuario](doc/historias-usuario.md)
-- [Modelo de datos y DER](doc/modelo-datos.md)
-- [Flujo del proceso PQR](doc/flujo-proceso.md)
-- [Coleccion Postman](doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json)
+Levantar servicios de apoyo:
 
-## Ejecucion local
+```bash
+npm run db:up
+npm run mail:up
+```
 
-### Instalacion
+Configurar variables del backend:
+
+```bash
+cd backend
+cp .env.example .env
+npx prisma validate
+npx prisma generate
+npx prisma migrate dev --name init_pqr_schema
+npm run db:seed
+cd ..
+```
+
+Instalar dependencias del backend y frontend:
 
 ```bash
 npm run install:all
 ```
 
-### Backend
+Ese comando instala dependencias en ambos proyectos. Es equivalente a ejecutar:
+
+```bash
+npm install --prefix backend
+npm install --prefix frontend
+```
+
+Luego ejecuta el backend y el frontend en terminales separadas.
+
+Terminal 1:
 
 ```bash
 npm run dev:backend
 ```
 
-Healthcheck:
-
-```text
-GET http://localhost:3000/health
-```
-
-Documentacion API:
-
-```text
-http://localhost:3000/api/reference
-```
-
-Coleccion Postman: [doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json](doc/postman/PRUEBA_EVALUACION_PQR.postman_collection.json)
-
-### Frontend
+Terminal 2:
 
 ```bash
 npm run dev:frontend
 ```
 
-### Build
+Verificacion local:
 
 ```bash
 npm run build
+npm run lint
+npm test --prefix backend -- --runInBand
 ```
 
-## Base de datos
+URLs:
 
-El backend usa Prisma con PostgreSQL. Para levantar la base de datos local:
+- Frontend: <http://localhost:5173>
+- Backend: <http://localhost:3000>
+- Scalar: <http://localhost:3000/api/reference>
+- Mailpit: <http://localhost:8025>
+
+### Local Docker
+
+Requisitos usados en esta entrega:
+
+```text
+Docker:         29.6.1
+Docker Compose: 5.1.4
+```
+
+Levantar el stack completo:
 
 ```bash
-npm run db:up
-npm run mail:up
+npm run docker:local:up
 ```
 
-Antes de ejecutar migraciones, copia el archivo de ejemplo y ajusta la cadena de conexion si es necesario:
+Este comando construye y levanta PostgreSQL, Mailpit, migraciones, backend y frontend.
+
+URLs:
+
+- Frontend: <http://localhost:5173>
+- Backend: <http://localhost:3000>
+- Scalar: <http://localhost:3000/api/reference>
+- Mailpit: <http://localhost:8025>
+
+Apagar:
 
 ```bash
-cd backend
-cp .env.example .env
+npm run docker:local:down
 ```
 
-Comandos utiles de Prisma:
+### Prod Docker
+
+Crear variables de produccion desde el ejemplo:
 
 ```bash
-cd backend
-npx prisma validate
-npx prisma generate
-npx prisma migrate dev --name init_pqr_schema
-npm run db:seed
+cp .env.production.example .env.production
 ```
 
-La migracion requiere que PostgreSQL este levantado y que `DATABASE_URL` apunte a una base de datos valida.
+Para revision local, el archivo copiado usa `APP_DOMAIN=:80`, por eso la aplicacion queda disponible en `http://localhost`. Es lo mismo que `http://localhost:80`, pero el navegador oculta el puerto HTTP por defecto.
 
-## Docker
+En este modo Caddy recibe el trafico en el puerto `80` y redirige internamente al frontend y al backend. Para un dominio real se deben ajustar `APP_DOMAIN`, `CORS_ORIGIN`, `JWT_SECRET`, credenciales de base de datos y SMTP.
 
-El `docker-compose.yml` incluye PostgreSQL y Mailpit para desarrollo local.
+Levantar:
 
 ```bash
-npm run db:up
-npm run mail:up
-npm run db:logs
-npm run mail:logs
-npm run db:down
+npm run docker:prod:up
 ```
 
-La aplicacion backend y frontend se ejecutan por comandos separados durante el desarrollo.
+URL local por Caddy:
 
-Mailpit expone SMTP local en `localhost:1025` y bandeja web en `http://localhost:8025`.
+- Aplicacion: <http://localhost>
+
+Apagar:
+
+```bash
+npm run docker:prod:down
+```
+
+## Stack definido
+
+- Backend: NestJS.
+- Frontend: React.
+- Base de datos propuesta: PostgreSQL.
+- ORM propuesto: Prisma.
+- Gestion del proyecto: GitHub Projects con flujo Kanban.
